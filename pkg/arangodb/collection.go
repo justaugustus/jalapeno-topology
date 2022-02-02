@@ -8,9 +8,9 @@ import (
 
 	driver "github.com/arangodb/go-driver"
 	"github.com/golang/glog"
-	"github.com/sbezverk/gobmp/pkg/bmp"
 	"github.com/jalapeno/topology/pkg/dbclient"
 	"github.com/jalapeno/topology/pkg/kafkanotifier"
+	"github.com/sbezverk/gobmp/pkg/bmp"
 	"go.uber.org/atomic"
 )
 
@@ -297,10 +297,10 @@ func (c *collection) genericWorker(k string, o DBRecord, done chan *result, toke
 		err = fmt.Errorf("unknown collection type %d", c.collectionType)
 		return
 	}
-	syncCtx := driver.WithWaitForSync(ctx, true)
+	//syncCtx := driver.WithWaitForSync(ctx, true)
 	switch action {
 	case "add":
-		if _, e := c.topicCollection.CreateDocument(syncCtx, obj); e != nil {
+		if _, e := c.topicCollection.CreateDocument(ctx, obj); e != nil {
 			switch {
 			// The following 2 types of errors inidcate that the document by the key already
 			// exists, no need to fail but instead call Update of the document.
@@ -309,7 +309,7 @@ func (c *collection) genericWorker(k string, o DBRecord, done chan *result, toke
 			default:
 				err = e
 			}
-			if _, e := c.topicCollection.UpdateDocument(syncCtx, k, obj); e != nil {
+			if _, e := c.topicCollection.UpdateDocument(ctx, k, obj); e != nil {
 				err = e
 				break
 			}
@@ -317,7 +317,7 @@ func (c *collection) genericWorker(k string, o DBRecord, done chan *result, toke
 			action = "update"
 		}
 	case "del":
-		if _, e := c.topicCollection.RemoveDocument(syncCtx, k); e != nil {
+		if _, e := c.topicCollection.RemoveDocument(ctx, k); e != nil {
 			if !driver.IsArangoErrorWithErrorNum(e, driver.ErrArangoDocumentNotFound) {
 				err = e
 			}
